@@ -35,12 +35,16 @@ def randomColors(n):
     return [[random(), random(), random(), (random()+.2) %1] for _ in range(n)]
 
 class Cube:
+    numCubes = 0
     def __init__(self, position=None, scale=vec3(1,1,1), rotation=None, velocity=vec3(0,0,0), angularVelocity=None):
         self.vertices = cubeVerts
         self.colors = randomColors(len(self.vertices))
         self.indices = cubeIndices
         self.scale=scale
         self.velocity = velocity
+
+        self.id = Cube.numCubes+1
+        Cube.numCubes += 1
 
         if position is None:
             self.position = vec3()
@@ -70,7 +74,8 @@ class Cube:
             'scale': self.scale,
             'rotation': self.rotation,
             'velocity': self.velocity,
-            'angularVelocity': self.angularVelocity
+            'angularVelocity': self.angularVelocity,
+            'id': self.id
         }
         return json.dumps(s)
 
