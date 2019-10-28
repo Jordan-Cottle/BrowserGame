@@ -45,9 +45,6 @@ class Client{
     }
 
     send(message){
-        if(!this.isReady()){
-            return;
-        }
         this.connection.send(message);
     }
 
