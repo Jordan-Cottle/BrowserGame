@@ -12,8 +12,6 @@ cubeVerts = [
     (  .5, -.5,  -.5 )
 ]
 
-cubeColors = [[random(), random(), random(), 1] for _ in range(len(cubeVerts))]
-
 cubeIndices = [
     1, 0, 3, 1, 3, 2,
     2, 3, 7, 2, 7, 6,
@@ -23,20 +21,41 @@ cubeIndices = [
     5, 4, 0, 5, 0, 1
 ]
 
-def vec3(a=0, b=0, c=0):
+def vec3(a=None, b=None, c=None):
+    if a is None:
+        a = random()*2 - 1
+    if b is None:
+        b = random()*2 -1
+    if c is None:
+        c = random()*2 -1
+    
     return [a, b, c]
 
+def randomColors(n):
+    return [[random(), random(), random(), (random()+.2) %1] for _ in range(n)]
 
 class Cube:
-    def __init__(self, position=vec3(), scale=vec3(1,1,1), rotation=vec3(), velocity=vec3(), angularVelocity=vec3()):
+    def __init__(self, position=None, scale=vec3(1,1,1), rotation=None, velocity=vec3(0,0,0), angularVelocity=None):
         self.vertices = cubeVerts
-        self.colors = cubeColors
+        self.colors = randomColors(len(self.vertices))
         self.indices = cubeIndices
-        self.position = position
         self.scale=scale
-        self.rotation = rotation
         self.velocity = velocity
-        self.angularVelocity = angularVelocity
+
+        if position is None:
+            self.position = vec3()
+        else:
+            self.position = position
+
+        if rotation is None:
+            self.rotation = vec3()
+        else:
+            self.rotation = rotation
+
+        if angularVelocity is None:
+            self.angularVelocity = vec3()
+        else:
+            self.angularVelocity = angularVelocity
     
     def update(self):
         self.position = [p + v for p, v in zip(self.position, self.velocity)]
