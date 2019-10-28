@@ -10,20 +10,30 @@ let objects = [];
 let client;
 
 function loadVertices(response){
-    let obj = JSON.parse(response.data);
+    if (response.data === 'No new objects!'){
+        client.send(objects.length);
+        return;
+    }
 
-    let buffer = new PrimitiveBuffer(gl, program, 'triangle');
-    for(let i = 0; i < obj.vertices.length; i++){
-        buffer.addVertex(obj.vertices[i], obj.colors[i]);
-    }
-    for(let i = 0; i < obj.indices.length; i++){
-        buffer.addIndex(obj.indices[i]);
-    }
+    let data = JSON.parse(response.data);
+
+    for(let i = 0; i < data.length; i++){
+        let datum = JSON.parse(data[i]);
     
-    
-    let cube = new RenderableObject(buffer, obj.scale, obj.position, obj.rotation, obj.velocity, obj.angularVelocity);
-    cube.angularVelocity = vec3(1,1,0);
-    objects.push(cube);
+        let buffer = new PrimitiveBuffer(gl, program, 'triangle');
+        for(let i = 0; i < datum.vertices.length; i++){
+            buffer.addVertex(datum.vertices[i], datum.colors[i]);
+        }
+        for(let i = 0; i < datum.indices.length; i++){
+            buffer.addIndex(datum.indices[i]);
+        }
+        
+        let obj = new RenderableObject(buffer, datum.scale, datum.position, datum.rotation, datum.velocity, datum.angularVelocity);
+        obj.scale = vec3(.4,.4,.4);
+        objects.push(obj);
+    }
+
+    client.send(""+objects.length);
 }
 
 // all initializations
@@ -53,50 +63,14 @@ window.onload = function init() {
 
     client = new Client(loadVertices);
 
-    // Only create a single set of vertices for each shape
-    let cube = this.createColorCube();
-    let tetrahedron = this.createColoredTetrahedron();
-
-    // Extra diamond
-    objects[0] = new RenderableObject(tetrahedron, vec3(.25, .4, .25));
-    objects[0].rotation = vec3(180, 0, 0);
-
-    objects[1] = new RenderableObject(tetrahedron, vec3(.25, .4, .25));
-
     gl.enable(gl.DEPTH_TEST);
 
     render();
 }
 
-let count = 0;
-let angularVelocity = vec3();
-let velocity = vec3();
 function render(){
 
 	gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    if (count == 90){
-        angularVelocity = vec3(Math.random(), Math.random(), Math.random());
-
-        objects[0].angularVelocity = angularVelocity;
-        if(angularVelocity[1] >0){
-            angularVelocity[1] = negate(angularVelocity)[1];
-        }
-        objects[1].angularVelocity = angularVelocity;
-
-        velocity = vec3(
-                ((Math.random()*2-1) - objects[0].position[0]/2) / 100,
-                ((Math.random()*2-1) - objects[0].position[1]/2) / 100,
-                ((Math.random()*2-1) - objects[0].position[2]/2) / 100
-            )
-
-        objects[0].velocity = velocity;
-        objects[1].velocity = velocity;
-
-        count = 0;
-    }else{
-        count++;
-    }
 
     for(let i = 0; i < objects.length; i++){
         objects[i].render();
