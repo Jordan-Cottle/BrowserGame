@@ -7,6 +7,24 @@ let compiled;
 let selection = 'z';
 
 let objects = [];
+let client;
+
+function loadVertices(response){
+    let obj = JSON.parse(response.data);
+
+    let buffer = new PrimitiveBuffer(gl, program, 'triangle');
+    for(let i = 0; i < obj.vertices.length; i++){
+        buffer.addVertex(obj.vertices[i], obj.colors[i]);
+    }
+    for(let i = 0; i < obj.indices.length; i++){
+        buffer.addIndex(obj.indices[i]);
+    }
+    
+    
+    let cube = new RenderableObject(buffer, obj.scale, obj.position, obj.rotation, obj.velocity, obj.angularVelocity);
+    cube.angularVelocity = vec3(1,1,0);
+    objects.push(cube);
+}
 
 // all initializations
 window.onload = function init() {
@@ -33,38 +51,17 @@ window.onload = function init() {
 	program = createShaders();
     gl.useProgram(program);
 
+    client = new Client(loadVertices);
+
     // Only create a single set of vertices for each shape
     let cube = this.createColorCube();
     let tetrahedron = this.createColoredTetrahedron();
 
-    // Top left cube with computed scale
-    let scale = .4 * .5;
-    objects[0] = new RenderableObject(cube, vec3(scale, scale, scale), vec3(-.5, .5, 0));
-    // Rotate around x axis
-    objects[0].angularVelocity = vec3(1,0,0);
-
-    // top right cube 
-    objects[1] = new RenderableObject(cube, vec3(.4, .4, .4), vec3(.5, .5, 0));
-    // Rotate around y axis
-    objects[1].angularVelocity = vec3(0,1,0);
-
-    // bottom left cube
-    objects[2] = new RenderableObject(cube, vec3(.4, .4, .4), vec3(-.5, -.5, 0));
-    // roate around z axis
-    objects[2].angularVelocity = vec3(0,0,1);
-
-    // bottom right cube, render function computes angular velocity
-    objects[3] = new RenderableObject(cube, vec3(.4, .4, .4), vec3(.5, -.5, 0));
-
     // Extra diamond
-    objects[4] = new RenderableObject(tetrahedron, vec3(.25/2, .4/2, .25/2));
-    objects[4].rotation = vec3(180, 0, 0);
+    objects[0] = new RenderableObject(tetrahedron, vec3(.25, .4, .25));
+    objects[0].rotation = vec3(180, 0, 0);
 
-    objects[5] = new RenderableObject(tetrahedron, vec3(.25/2, .4/2, .25/2));
-
-    objects[4].position = vec3(.8);
-    objects[5].position = vec3(.8);
-
+    objects[1] = new RenderableObject(tetrahedron, vec3(.25, .4, .25));
 
     gl.enable(gl.DEPTH_TEST);
 
@@ -72,50 +69,34 @@ window.onload = function init() {
 }
 
 let count = 0;
+let angularVelocity = vec3();
 let velocity = vec3();
 function render(){
 
 	gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
-    // Determine axis for bottom right cube
-    let angularVelocity = vec3();
-    switch(selection){
-        case 'y':
-            angularVelocity[1] = 1;
 
-            if(count % 90 === 89){
-                selection = 'z';
-            }
-            break;
-        case 'z':
-            angularVelocity[2] = 1;
+    if (count == 90){
+        angularVelocity = vec3(Math.random(), Math.random(), Math.random());
 
-            if(count % 90 === 89){
-                selection = 'y';
-            }
-            break;
+        objects[0].angularVelocity = angularVelocity;
+        if(angularVelocity[1] >0){
+            angularVelocity[1] = negate(angularVelocity)[1];
+        }
+        objects[1].angularVelocity = angularVelocity;
+
+        velocity = vec3(
+                ((Math.random()*2-1) - objects[0].position[0]/2) / 100,
+                ((Math.random()*2-1) - objects[0].position[1]/2) / 100,
+                ((Math.random()*2-1) - objects[0].position[2]/2) / 100
+            )
+
+        objects[0].velocity = velocity;
+        objects[1].velocity = velocity;
+
+        count = 0;
+    }else{
+        count++;
     }
-
-    
-    count++;
-
-    objects[3].angularVelocity = angularVelocity;
-    objects[4].angularVelocity = angularVelocity;
-    if(angularVelocity[1] >0){
-        angularVelocity = negate(angularVelocity);
-    }
-    objects[5].angularVelocity = angularVelocity;
-
-    // create random velocities that will keep the object inside of the canvas
-    if(count % 60 === 1){
-        velocity[0] = ((Math.random()*2-1) - objects[4].position[0]/2) / 100;
-        velocity[1] = ((Math.random()*2-1) - objects[4].position[1]/2) / 100;
-        velocity[2] = ((Math.random()*2-1) - objects[4].position[2]/2) / 100;
-    }
-    
-
-    objects[4].velocity = velocity;
-    objects[5].velocity = velocity;
 
     for(let i = 0; i < objects.length; i++){
         objects[i].render();
@@ -154,6 +135,8 @@ function createColorCube () {
         createQuad( 4, 5, 6, 7),
         createQuad( 5, 4, 0, 1)
     ];
+
+    console.log(quads);
 
     for(let i = 0; i < quads.length; i++){
         for ( let j = 0; j < quads[i].length; j++) {

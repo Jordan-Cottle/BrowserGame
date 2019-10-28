@@ -1,9 +1,12 @@
 import asyncio
 import websockets
-
+from geometry import Cube
 connections = {}
-async def echo(websocket, path):
-    connections[websocket] = 0
+async def sendVertexData(websocket, path):
+    
+    
+    connections[websocket] = Cube()
+    await websocket.send(str(connections[websocket]))
     data = True
     while data:
         data = await websocket.recv()
@@ -15,7 +18,7 @@ async def echo(websocket, path):
         await websocket.send(reply)
         print(f'Sent: {reply}')
 
-server = websockets.serve(echo, 'localhost', 5555)
+server = websockets.serve(sendVertexData, 'localhost', 5555)
 
 asyncio.get_event_loop().run_until_complete(server)
 asyncio.get_event_loop().run_forever()
