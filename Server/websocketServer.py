@@ -1,22 +1,34 @@
 import asyncio
 import websockets
 from geometry import Cube
+import json
 connections = {}
+objects = []
+def getObjectsJson(objs):
+    return json.dumps([str(o) for o in objs])
 async def sendVertexData(websocket, path):
-    
-    
     connections[websocket] = Cube()
-    await websocket.send(str(connections[websocket]))
-    data = True
-    while data:
-        data = await websocket.recv()
-        print(f'Received: {data}')
+    objects.append(connections[websocket])
+    initialMessage = getObjectsJson(objects)
+    await websocket.send(initialMessage)
 
-        reply = f'{connections[websocket]}: {data.upper()}'
-        connections[websocket] += 1
+    try:
+        data = True
+        while data:
+            data = await websocket.recv()
+            print(f'Received: {data}')
 
-        await websocket.send(reply)
-        print(f'Sent: {reply}')
+            numObjects = int(data)
+
+            if numObjects < len(objects):
+                msg = getObjectsJson(objects[numObjects:])
+            else:
+                msg = "No new objects!"
+
+            await websocket.send(msg)
+    except websockets.ConnectionClosedOK as e:
+        connections.pop(websocket)
+        print("Closing connection")
 
 server = websockets.serve(sendVertexData, 'localhost', 5555)
 
