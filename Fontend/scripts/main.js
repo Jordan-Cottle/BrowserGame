@@ -1,7 +1,8 @@
 let canvas;
 let gl;
+let program;
 
-let vertexBuffer;
+let tileMap;
 
 window.onload = init
 window.onresize = scale_canvas
@@ -12,19 +13,22 @@ function init(){
     scale_canvas();
 
     gl = createWebglContext(canvas, vec4(0.1, 0.1, 0.1, 1));
-    let program = setUpProgram(gl, vertexShaderSource, fragmentShaderSource);
+    program = setUpProgram(gl, vertexShaderSource, fragmentShaderSource);
     gl.useProgram(program);
 
+    let hexSize = 1/16;
     // Set up data to be drawn
-    let hexagonVertices = hexagon(.5);
+    let hexagonVertices = hexagon(hexSize);
 
-    vertexBuffer = new DataBuffer(gl, program, hexagonVertices);
+    let vertexBuffer = new DataBuffer(gl, program, hexagonVertices);
     
     let colors = createColors(vertexBuffer.length())
-    colorBuffer = new DataBuffer(gl, program, colors);
+    let colorBuffer = new DataBuffer(gl, program, colors);
     
-    colorBuffer.load('vColor', 4);
-    vertexBuffer.load('vPosition', 4);
+    colorBuffer.load('vColor');
+    vertexBuffer.load('vPosition');
+
+    tileMap = new TileMap(gl, program, vertexBuffer, 24, 24, hexSize);
 
     render();
 }
@@ -41,7 +45,7 @@ function scale_canvas(){
 function render(){
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.drawArrays(gl.LINE_LOOP, 0, vertexBuffer.length());
+    tileMap.render(gl);
 
     requestAnimFrame(render);
 }
