@@ -40,7 +40,7 @@ function transpose(matrix){
 
     for(let i = 0; i < matrix.length; i++){
         result.push([]);
-        for(let i = 0; i < matrix[i].length; i++){
+        for(let j = 0; j < matrix[i].length; j++){
             result[i].push(matrix[j][i]);
         }
     }
