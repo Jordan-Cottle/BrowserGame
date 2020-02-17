@@ -5,7 +5,7 @@
  * 
  * @returns An array of 6 coordinate pairs containing data for the six vertices of a hexagon
  */
-function hexagon(size){
+function hexagon(size=1){
     vertices = [];
 
     for (let i = 0; i < 6; i++){
@@ -17,45 +17,55 @@ function hexagon(size){
         ])
     }
 
-    console.log(vertices);
     return vertices;
 }
 
 
+class Tile{
+    constructor(x, y){
+        this.x = x;
+        this.y = y;
+
+        let xDelta = 6/4;
+        let hHeight = Math.sqrt(3);
+
+        this.transform = flatten(
+            translation(xDelta*x, hHeight*(y-(x%2/2)))
+        )
+    }
+}
+
 
 class TileMap{
-    constructor(gl, program, vertexBuffer, width, height, hexSize){
+    constructor(gl, program, vertexBuffer, width, height, color){
         this.vertexBuffer = vertexBuffer;
-
-        let hWidth = 2*hexSize;
-        let hHeight = Math.sqrt(3)*hexSize;
-
-        let xDelta = hWidth*3/4;
-        
 
         this.width = width;
         this.height = height;
+        
+        this.color = flatten(color);
 
-        this.transforms = [];
+
+        this.tiles = [];
 
         for(let x = -this.width/2; x < this.width/2; x++){
             for(let y= -this.height/2; y < this.height/2; y++){
-                this.transforms.push(flatten(
-                    translation(xDelta*x, hHeight*(y-(x%2/2)))
-                ));
+                this.tiles.push(new Tile(x, y));
             }
         }
 
         this.tPos = gl.getUniformLocation(program, 'transform');
+        this.cPos = gl.getUniformLocation(program, 'hexColor');
     }
 
     render(gl){
-        for(let x = 0; x < this.width; x++){
-            for(let y= 0; y < this.height; y++){
-                gl.uniformMatrix4fv(this.tPos, false, this.transforms[x*this.width+y]);
+        this.vertexBuffer.load('vPosition');
+        gl.uniform4fv(this.cPos, this.color);
 
-                gl.drawArrays(gl.LINE_LOOP, 0, this.vertexBuffer.length());
-            }
+        let numElements = this.vertexBuffer.length();
+        for (let tile of this.tiles){
+            gl.uniformMatrix4fv(this.tPos, false, tile.transform);
+            gl.drawArrays(gl.LINE_LOOP, 0, numElements);
         }
     }
 }
