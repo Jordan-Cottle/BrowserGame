@@ -34,8 +34,6 @@ class DataBuffer{
     }
   
     load(variable, size=4){
-
-        console.log("loading into", variable)
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
         let varPos = this.gl.getAttribLocation(this.program, variable);
         this.gl.vertexAttribPointer(varPos, size, this.gl.FLOAT, false, 0, 0);
