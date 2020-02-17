@@ -3,6 +3,7 @@ let gl;
 let program;
 
 let tileMap;
+let camera;
 
 window.onload = init
 window.onresize = scale_canvas
@@ -16,21 +17,54 @@ function init(){
     program = setUpProgram(gl, vertexShaderSource, fragmentShaderSource);
     gl.useProgram(program);
 
-    let hexSize = 1/16;
     // Set up data to be drawn
-    let hexagonVertices = hexagon(hexSize);
-
+    let hexagonVertices = hexagon();
     let vertexBuffer = new DataBuffer(gl, program, hexagonVertices);
-    
-    let colors = createColors(vertexBuffer.length())
-    let colorBuffer = new DataBuffer(gl, program, colors);
-    
-    colorBuffer.load('vColor');
-    vertexBuffer.load('vPosition');
+    tileMap = new TileMap(gl, program, vertexBuffer, 14, 14, randomColor());
 
-    tileMap = new TileMap(gl, program, vertexBuffer, 24, 24, hexSize);
+    // Set up camera
+    camera = new Camera(gl, program, 20, 0);
+
+    // Set up event handlers
+    window.addEventListener('keydown', keyboardInputHandler);
+    window.addEventListener('wheel', cameraZoomHandler);
 
     render();
+}
+
+function cameraZoomHandler(event){
+    camera.zoom(-event.deltaY / 100)
+}
+
+let cameraPanSpeed = 0.25;
+let cameraRotateSpeed = 2;
+function keyboardInputHandler(event){
+    switch(event.key){
+        case 'ArrowLeft':
+        case 'a':
+            camera.move(-cameraPanSpeed, 0);
+            break;
+        case 'ArrowRight':
+        case 'd':
+            camera.move(cameraPanSpeed, 0);
+            break;
+        case 'ArrowUp':
+        case 'w':
+            camera.move(0, cameraPanSpeed);
+            break;
+        case 'ArrowDown':
+        case 's':
+            camera.move(0, -cameraPanSpeed);
+            break;
+        case 'q':
+            camera.rotate(-cameraRotateSpeed);
+            break;
+        case 'e':
+            camera.rotate(cameraRotateSpeed);
+            break;
+        default:
+            console.log(event.key);
+    }
 }
 
 function scale_canvas(){
@@ -45,7 +79,6 @@ function scale_canvas(){
 function render(){
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    tileMap.render(gl);
-
+    camera.render(tileMap);
     requestAnimFrame(render);
 }
