@@ -43,11 +43,11 @@ class Camera{
         const top = this.size / 2;
         const bottom = -top;
 
-        const near = -1;
-        const far = 1;
+        const near = -10;
+        const far = 10;
         const offset = negate(this.pos);
         const translate = translation(offset[0], offset[1]);
-        const s = scale(2/(right-left), 2/(top-bottom), 2/(far-near));
+        const s = scale(2/(right-left), 2/(top-bottom), -2/(far-near));
 
         const r = relativeTo(this.pos, rotateZ(this.rotation));
         this.transform = flatten(compose(s, r, translate));

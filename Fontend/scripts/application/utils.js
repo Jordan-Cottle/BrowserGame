@@ -38,3 +38,11 @@ function mouseCoords(event){
 
     return results;
 }
+
+function find(item, array){
+    for (let i = 0; i < array.length; i++){
+        if (array[i] === item){
+            return i;
+        }
+    }
+}

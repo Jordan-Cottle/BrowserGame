@@ -5,6 +5,8 @@ let program;
 let tileMap;
 let camera;
 
+const MAP_SIZE = 14;
+
 window.onload = init
 window.onresize = scale_canvas
 
@@ -13,17 +15,18 @@ function init(){
 
     scale_canvas();
 
-    gl = createWebglContext(canvas, vec4(0.1, 0.1, 0.1, 1));
+    gl = createWebglContext(canvas, vec4(0.07, 0.075, 0.12, 1));
     program = setUpProgram(gl, vertexShaderSource, fragmentShaderSource);
     gl.useProgram(program);
+    gl.enable(gl.DEPTH_TEST);
 
     // Set up data to be drawn
     let hexagonVertices = hexagon();
     let vertexBuffer = new DataBuffer(gl, program, hexagonVertices);
-    tileMap = new TileMap(gl, program, vertexBuffer, 14, 14, randomColor());
+    tileMap = new TileMap(gl, program, vertexBuffer, MAP_SIZE, MAP_SIZE, randomColor());
 
     // Set up camera
-    camera = new Camera(gl, program, 20, 0);
+    camera = new Camera(gl, program, MAP_SIZE*2, 0);
 
     // Set up event handlers
     window.addEventListener('keydown', keyboardInputHandler);
@@ -76,9 +79,26 @@ function scale_canvas(){
     canvas.height = canvas.width;
 }
 
+let i = 0;
+let count = 0;
 function render(){
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    camera.render(tileMap);
     requestAnimFrame(render);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    camera.render(tileMap);
+
+    
+    if (++count > 4){
+        try{
+            tileMap.select(i,i++);
+        }catch(TypeError){
+            i=0;
+        }
+        if (tileMap.selected.length > 5){
+            tileMap.selected.shift().deselect();
+        }
+        count = 0;
+    }
+
+
+
 }

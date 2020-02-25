@@ -20,18 +20,52 @@ function hexagon(size=1){
     return vertices;
 }
 
+const TILE_WIDTH = 6/4;
+const TILE_HEIGHT = Math.sqrt(3);
+const TILE_COLOR = randomColor();
+const TILE_SELECTED_COLOR = randomColor();
 
 class Tile{
     constructor(x, y){
         this.x = x;
         this.y = y;
+        this.z = 0;
+        this.selected = false;
 
-        let xDelta = 6/4;
-        let hHeight = Math.sqrt(3);
+        this.transform = this.compute_transform();
+    }
 
-        this.transform = flatten(
-            translation(xDelta*x, hHeight*(y-(x%2/2)))
-        )
+    select(){
+        this.selected = true;
+        this.z = 1;
+
+        this.transform = this.compute_transform();
+    }
+
+    deselect(){
+        if(!this.selected){
+            return;
+        }
+
+        this.selected = false;
+        this.z = 0;
+        
+        this.transform = this.compute_transform();
+    }
+
+    compute_transform(){
+        const yOffset = Math.abs(this.x)%2/2;
+        return flatten(
+            translation(
+                TILE_WIDTH*this.x,
+                TILE_HEIGHT*(this.y-yOffset),
+                this.z
+            )
+        );
+    }
+
+    color(){
+        return this.selected ? TILE_SELECTED_COLOR : TILE_COLOR;
     }
 }
 
@@ -47,6 +81,7 @@ class TileMap{
 
 
         this.tiles = [];
+        this.selected = [];
 
         for(let x = -this.width/2; x < this.width/2; x++){
             for(let y= -this.height/2; y < this.height/2; y++){
@@ -58,12 +93,24 @@ class TileMap{
         this.cPos = gl.getUniformLocation(program, 'hexColor');
     }
 
+    select(x, y){
+        const tile = this.tiles[x*this.height + y];
+        tile.select();
+        this.selected.push(tile); 
+    }
+    
+    deselect(x, y){
+        const tile = this.tiles[x*this.height + y];
+        tile.deselect();
+        this.selected.splice(find(tile, this.selected), 1);
+    }
+
     render(gl){
         this.vertexBuffer.load('vPosition');
-        gl.uniform4fv(this.cPos, this.color);
-
-        let numElements = this.vertexBuffer.length();
+        
+        const numElements = this.vertexBuffer.length();
         for (let tile of this.tiles){
+            gl.uniform4fv(this.cPos, tile.color());
             gl.uniformMatrix4fv(this.tPos, false, tile.transform);
             gl.drawArrays(gl.LINE_LOOP, 0, numElements);
         }
