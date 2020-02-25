@@ -71,14 +71,11 @@ class Tile{
 
 
 class TileMap{
-    constructor(gl, program, vertexBuffer, width, height, color){
+    constructor(gl, program, vertexBuffer, width, height){
         this.vertexBuffer = vertexBuffer;
 
         this.width = width;
         this.height = height;
-        
-        this.color = flatten(color);
-
 
         this.tiles = [];
         this.selected = [];

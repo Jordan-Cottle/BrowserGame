@@ -184,25 +184,24 @@ function multiply(matrix, matVec){
         }
     
         return result;
-    }else{
-        let result = [];
-        for(let r = 0; r < matrix.length; r++){
-            let row = [];
-            for(let c = 0; c < matVec.length; c++){
-                let sum = 0;
-                for(let i = 0; i < matrix.length; i++){
-                    sum += matrix[r][i] * matVec[i][c];
-                }
-                row.push(sum)
-            }
-            result.push(row);
-        }
-
-        result.matrix = true;
-
-        return result;
     }
     
+    let result = [];
+    for(let r = 0; r < matrix.length; r++){
+        let row = [];
+        for(let c = 0; c < matVec.length; c++){
+            let sum = 0;
+            for(let i = 0; i < matrix.length; i++){
+                sum += matrix[r][i] * matVec[i][c];
+            }
+            row.push(sum)
+        }
+        result.push(row);
+    }
+
+    result.matrix = true;
+
+    return result;
 }
 
 function translation(x, y, z=0){

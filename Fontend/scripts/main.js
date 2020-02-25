@@ -23,7 +23,7 @@ function init(){
     // Set up data to be drawn
     let hexagonVertices = hexagon();
     let vertexBuffer = new DataBuffer(gl, program, hexagonVertices);
-    tileMap = new TileMap(gl, program, vertexBuffer, MAP_SIZE, MAP_SIZE, randomColor());
+    tileMap = new TileMap(gl, program, vertexBuffer, MAP_SIZE, MAP_SIZE);
 
     // Set up camera
     camera = new Camera(gl, program, MAP_SIZE*2, 0);
