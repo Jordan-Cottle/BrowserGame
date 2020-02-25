@@ -123,6 +123,15 @@ function normalize(vector){
     return res;
 }
 
+function negate(vector){
+    let result = [];
+    for (num of vector){
+        result.push(-num);
+    }
+
+    return result;
+}
+
 function vectorBetween(a, b){
     let vec = [];
     for(let i = 0; i < a.length; i++){
