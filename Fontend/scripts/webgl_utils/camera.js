@@ -3,8 +3,7 @@ class Camera{
         this.gl = gl;
         this.program = program;
 
-        this.x = 0;
-        this.y = 0;
+        this.pos = vec4(0, 0);
 
         this.size = size;
         this.rotation = rotation;
@@ -18,8 +17,9 @@ class Camera{
     }
 
     move(x, y){
-        this.x += x;
-        this.y += y;
+        const offset = multiply(rotateZ(-this.rotation), vec4(x, y, 0, 0));
+        this.pos[0] += offset[0];
+        this.pos[1] += offset[1];
 
         this.computeOrthographicProjection();
     }
@@ -37,19 +37,19 @@ class Camera{
     }
 
     computeOrthographicProjection(){
-        let right = this.size / 2;
-        let left = -right;
+        const right = this.size / 2;
+        const left = -right;
         
-        let top = this.size / 2;
-        let bottom = -top;
+        const top = this.size / 2;
+        const bottom = -top;
 
-        let near = -1;
-        let far = 1;
+        const near = -1;
+        const far = 1;
+        const offset = negate(this.pos);
+        const translate = translation(offset[0], offset[1]);
+        const s = scale(2/(right-left), 2/(top-bottom), 2/(far-near));
 
-        let translate = translation(-this.x, -this.y);
-        let s = scale(2/(right-left), 2/(top-bottom), -2/(far-near));
-
-        let r = rotateZ(this.rotation);
+        const r = relativeTo(this.pos, rotateZ(this.rotation));
         this.transform = flatten(compose(s, r, translate));
     }
 
