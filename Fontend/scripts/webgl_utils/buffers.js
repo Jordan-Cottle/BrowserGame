@@ -29,6 +29,19 @@ class DataBuffer{
         this.updateBuffer();
     }
 
+    setData(data){
+        this.data = data;
+        this.updateBuffer();
+    }
+
+    updateData(start, data){
+        for(let i = start, j = 0; j < data.length; i++, j++){
+            this.data[i] = data[j];
+        }
+
+        this.updateBuffer();
+    }
+
     length(){
         return this.data.length;
     }
@@ -36,8 +49,9 @@ class DataBuffer{
     load(variable, size=4){
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
         let varPos = this.gl.getAttribLocation(this.program, variable);
-        this.gl.vertexAttribPointer(varPos, size, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(varPos);
+        
+        this.gl.vertexAttribPointer(varPos, size, this.gl.FLOAT, false, 0, 0);
     }
 };
   
