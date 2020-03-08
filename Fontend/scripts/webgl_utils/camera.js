@@ -18,8 +18,8 @@ class Camera{
 
     move(x, y){
         const offset = multiply(rotateZ(-this.rotation), vec4(x, y, 0, 0));
-        this.pos[0] += offset[0];
-        this.pos[1] += offset[1];
+        this.pos[0] += offset[0]*this.size;
+        this.pos[1] += offset[1]*this.size;
 
         this.computeOrthographicProjection();
     }
@@ -50,7 +50,7 @@ class Camera{
         const s = scale(2/(right-left), 2/(top-bottom), -2/(far-near));
 
         const r = relativeTo(this.pos, rotateZ(this.rotation));
-        this.transform = flatten(compose(s, r, translate));
+        this.transform = flatten(compose(r, translate, s));
     }
 
     render(...objects){
