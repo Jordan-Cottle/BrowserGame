@@ -54,6 +54,67 @@ class DataBuffer{
         this.gl.vertexAttribPointer(varPos, size, this.gl.FLOAT, false, 0, 0);
     }
 };
+
+class MultiBuffer{
+    constructor(gl, program, size){
+        this.gl = gl;
+        this.program = program;
+
+        this.length = size;
+
+        this.data = new Float32Array(size);
+        if(this.parent != null){
+            this.parent.push(this.data);
+            this.buffer = this.parent.getBuffer();
+        }else{
+            this.buffer = this.gl.createBuffer();
+        }
+    }
+
+    set(index, value, update=false){
+        this.data[index] = value;
+        
+        if (update){
+            this.update();
+        }
+    }
+
+    get(index){
+        return this.data[index];
+    }
+
+    createSubBuffer(start, size){
+        return this.data.subarray(start, start+size);
+    }
+
+    fill(value, start=0, step=1, end=null){
+        if (!end){
+            end = this.length;
+        }
+        for (let i = start; i < end; i+=step){
+            this.data[i] = value;
+        }
+    }
+
+    update(){
+        // console.log(this.data);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, this.data, this.gl.STATIC_DRAW);
+    }
+
+    load(variable, size){
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
+        let varPos = this.gl.getAttribLocation(this.program, variable);
+        this.gl.enableVertexAttribArray(varPos);
+        
+        this.gl.vertexAttribPointer(varPos, size, this.gl.FLOAT, false, 0, 0);
+    }
+
+    render(mode, variable, size){
+        this.load(variable, size);
+        this.gl.drawArrays(mode, 0, this.length);
+    }
+};
   
 class IndexBuffer{
     constructor(gl, program, data = []){
