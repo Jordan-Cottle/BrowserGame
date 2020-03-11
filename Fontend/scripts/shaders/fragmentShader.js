@@ -1,9 +1,9 @@
 let fragmentShaderSource = `
 precision highp float; 
 
-uniform vec4 hexColor;
+varying vec4 fColor;
 void main()
 {
-    gl_FragColor = hexColor;
+    gl_FragColor = fColor;
 }
 `;

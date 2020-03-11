@@ -1,67 +1,117 @@
-/**
- * Generates vertices for regular hexagon centered at the origin with a given side length
- * 
- * @param {number} size The length of one of the hexagon's sides 
- * 
- * @returns An array of 6 coordinate pairs containing data for the six vertices of a hexagon
- */
-function hexagon(size=1){
-    vertices = [];
-
-    for (let i = 0; i < 6; i++){
-        let angle = (60*i) * (Math.PI/180);
-        
-        vertices.push([
-            size*Math.cos(angle),
-            size*Math.sin(angle)
-        ])
-    }
-
-    return vertices;
-}
-
-const TILE_WIDTH = 6/4;
-const TILE_HEIGHT = Math.sqrt(3);
 const TILE_COLOR = randomColor();
 const TILE_SELECTED_COLOR = randomColor();
 
-class Tile{
-    constructor(x, y){
-        this.x = x;
-        this.y = y;
-        this.z = 0;
-        this.selected = false;
+const SQRT3 = Math.sqrt(3);
+const TO_RAD = Math.PI/180;
+const COS = {
+      "0": Math.cos(0 * TO_RAD),
+     "60": Math.cos(60 * TO_RAD),
+    "120": Math.cos(120 * TO_RAD),
+    "180": Math.cos(180 * TO_RAD),
+    "240": Math.cos(240 * TO_RAD),
+    "300": Math.cos(300 * TO_RAD),
+    "360": Math.cos(360 * TO_RAD),
+};
 
-        this.transform = this.compute_transform();
+const SIN = {
+      "0": Math.sin(0 * TO_RAD),
+     "60": Math.sin(60 * TO_RAD),
+    "120": Math.sin(120 * TO_RAD),
+    "180": Math.sin(180 * TO_RAD),
+    "240": Math.sin(240 * TO_RAD),
+    "300": Math.sin(300 * TO_RAD),
+    "360": Math.sin(360 * TO_RAD),
+};
+
+let minX;
+let maxX;
+let minY;
+let maxY;
+
+/**
+ * Generates vertices for regular hexagon centered at a given position.
+ * 
+ * X and Y axis are given in hex coordinates. Z axis is copied exactly
+ * 
+ * @param {Float32Array} dataBuffer An array to put the generated data into.
+ * @param {number} x The x axis of the hexagon to generate 
+ * @param {number} y The y axis of the hexagon to generate 
+ * @param {number} z The z axis of the hexagon to generate 
+ * @param {number} size The length of one of the hexagon's sides 
+ * 
+ * @returns An array containging data to draw all six line segments of a hexagon
+ */
+function generateHexagon(dataBuffer, x=0, y=0, z=0, size=1){
+    const hOffset = size * 1.5 * (x+y);
+    const vOffset = size * SIN[60] * (y-x);
+
+    let i = -1;
+    dataBuffer[++i] = size*COS[0] + hOffset;
+    dataBuffer[++i] = size*SIN[0] + vOffset;
+    dataBuffer[++i] = z;
+
+    for (let angle = 60; angle < 360; angle += 60){
+        const vertex = [
+            size*COS[angle] + hOffset,
+            size*SIN[angle] + vOffset,
+            z
+        ];
+
+        dataBuffer[++i] = vertex[0];
+        dataBuffer[++i] = vertex[1];
+        dataBuffer[++i] = vertex[2];
+        
+        dataBuffer[++i] = vertex[0];
+        dataBuffer[++i] = vertex[1];
+        dataBuffer[++i] = vertex[2];
+    }
+
+    dataBuffer[++i] = size*COS[360] + hOffset;
+    dataBuffer[++i] = size*SIN[360] + vOffset;
+    dataBuffer[++i] = z;
+}
+
+class Tile{
+    constructor(x, y, vertexBuffer, colorBuffer){
+        this.selected = false;
+        this.vertexBuffer = vertexBuffer;
+        this.colorBuffer = colorBuffer;
+
+        generateHexagon(this.vertexBuffer, x, y);
+
+        this.setColor(TILE_COLOR);
+    }
+
+    setColor(color){
+        for (let i = 0; i < VERTICES_PER_HEX; i++){
+            this.colorBuffer.set(color, i*4);
+        }
     }
 
     select(){
+        if(this.selected){
+            return;
+        }
+
         this.selected = true;
-        this.z = 1;
+        for (let i = 2; i < this.vertexBuffer.length; i+=3){
+            this.vertexBuffer[i] = 1;
+        }
 
-        this.transform = this.compute_transform();
+        this.setColor(TILE_SELECTED_COLOR);
     }
-
+    
     deselect(){
         if(!this.selected){
             return;
         }
-
-        this.selected = false;
-        this.z = 0;
         
-        this.transform = this.compute_transform();
-    }
+        this.selected = false;
+        for (let i = 2; i < this.vertexBuffer.length; i+=3){
+            this.vertexBuffer[i] = 0;
+        }
 
-    compute_transform(){
-        const yOffset = Math.abs(this.x)%2/2;
-        return flatten(
-            translation(
-                TILE_WIDTH*this.x,
-                TILE_HEIGHT*(this.y-yOffset),
-                this.z
-            )
-        );
+        this.setColor(TILE_COLOR);
     }
 
     color(){
@@ -69,47 +119,70 @@ class Tile{
     }
 }
 
+const SIDES_PER_HEX = 6;
+const VERTICES_PER_LINE = 2;
+const VERTICES_PER_HEX = SIDES_PER_HEX*VERTICES_PER_LINE;
+const VERTEX_FLOATS_PER_HEX = VERTICES_PER_HEX*3;
+const COLOR_FLOATS_PER_HEX = VERTICES_PER_HEX*4;
 
 class TileMap{
-    constructor(gl, program, vertexBuffer, width, height){
-        this.vertexBuffer = vertexBuffer;
+    constructor(gl, program, width, height){
+        const vertexDataSize = VERTEX_FLOATS_PER_HEX * width * height;
+        const colorDataSize = COLOR_FLOATS_PER_HEX * width * height;
+        this.vertexBuffer = new MultiBuffer(gl, program, vertexDataSize);
 
+        this.colorBuffer = new MultiBuffer(gl, program, colorDataSize);
+        
         this.width = width;
         this.height = height;
-
+        
         this.tiles = [];
         this.selected = [];
-
-        for(let x = -this.width/2; x < this.width/2; x++){
-            for(let y= -this.height/2; y < this.height/2; y++){
-                this.tiles.push(new Tile(x, y));
+        
+        minX = 0
+        minY = 0
+        maxX = this.width-1;
+        maxY = this.width-1;
+        let i = 0;
+        let j = 0;
+        for(let x = 0; x < this.width; x++){
+            let row = [];
+            for(let y = 0; y < this.height; y++){
+                const vertexArray = this.vertexBuffer.createSubBuffer(i, VERTEX_FLOATS_PER_HEX);
+                const colorArray = this.colorBuffer.createSubBuffer(j, COLOR_FLOATS_PER_HEX);
+                row.push(new Tile(x, y, vertexArray, colorArray));
+                i += VERTEX_FLOATS_PER_HEX;
+                j += COLOR_FLOATS_PER_HEX;
             }
+            
+            this.tiles.push(row);
         }
+        
+        this.update();
+    }
 
-        this.tPos = gl.getUniformLocation(program, 'transform');
-        this.cPos = gl.getUniformLocation(program, 'hexColor');
+    update(){
+        this.vertexBuffer.update();
+        this.colorBuffer.update();
     }
 
     select(x, y){
-        const tile = this.tiles[x*this.height + y];
+        const tile = this.tiles[x][y];
         tile.select();
-        this.selected.push(tile); 
+
+        this.selected.push(tile);
+        this.update();
     }
     
     deselect(x, y){
-        const tile = this.tiles[x*this.height + y];
+        const tile = this.tiles[x][y];
         tile.deselect();
-        this.selected.splice(find(tile, this.selected), 1);
+        
+        this.update();
     }
 
     render(gl){
-        this.vertexBuffer.load('vPosition');
-        
-        const numElements = this.vertexBuffer.length();
-        for (let tile of this.tiles){
-            gl.uniform4fv(this.cPos, tile.color());
-            gl.uniformMatrix4fv(this.tPos, false, tile.transform);
-            gl.drawArrays(gl.LINE_LOOP, 0, numElements);
-        }
+        this.colorBuffer.load('vColor', 4);   
+        this.vertexBuffer.render(gl.LINES, 'vPosition', 3);   
     }
 }

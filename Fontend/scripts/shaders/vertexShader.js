@@ -1,13 +1,14 @@
 let vertexShaderSource = `
 attribute vec4 vPosition;
+attribute vec4 vColor;
 
-uniform mat4 transform;
 uniform mat4 cameraTransform;
 
-uniform vec4 hexColor;
+varying vec4 fColor;
 
 void main()
 {
-	gl_Position = cameraTransform*transform*vPosition;
+	fColor = vColor;
+	gl_Position = cameraTransform*vPosition;
 }
 `;

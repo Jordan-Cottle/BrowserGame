@@ -5,7 +5,7 @@ let program;
 let tileMap;
 let camera;
 
-const MAP_SIZE = 14;
+const MAP_SIZE = 20;
 
 window.onload = init
 window.onresize = scale_canvas
@@ -20,13 +20,12 @@ function init(){
     gl.useProgram(program);
     gl.enable(gl.DEPTH_TEST);
 
-    // Set up data to be drawn
-    let hexagonVertices = hexagon();
-    let vertexBuffer = new DataBuffer(gl, program, hexagonVertices);
-    tileMap = new TileMap(gl, program, vertexBuffer, MAP_SIZE, MAP_SIZE);
+    // Set up tile map
+    tileMap = new TileMap(gl, program, MAP_SIZE, MAP_SIZE);
 
     // Set up camera
-    camera = new Camera(gl, program, MAP_SIZE*2, 0);
+    camera = new Camera(gl, program, MAP_SIZE, 0);
+    camera.move(1.5, 0);
 
     // Set up event handlers
     window.addEventListener('keydown', keyboardInputHandler);
@@ -88,12 +87,8 @@ function render(){
 
     
     if (++count > 4){
-        try{
-            tileMap.select(i,i++);
-        }catch(TypeError){
-            i=0;
-        }
-        if (tileMap.selected.length > 5){
+        tileMap.select((Math.random()*MAP_SIZE)>>0, (Math.random()*MAP_SIZE)>>0);
+        if (tileMap.selected.length > MAP_SIZE*MAP_SIZE/10){
             tileMap.selected.shift().deselect();
         }
         count = 0;
